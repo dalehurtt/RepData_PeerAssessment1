@@ -74,7 +74,8 @@ Given the R-friendly format of our raw data, we only need uncompress the file
 and read the data into a simple data frame. No other processing is done on the
 main dataset.
 
-```{r}
+
+```r
 zipname <- "activity.zip"
 csvname <- "activity.csv"
 data <- read.csv (unz (zipname, filename = csvname))
@@ -89,7 +90,8 @@ little versus how often they walk a lot. For this a simple histogram will
 suffice, as we are not (yet) concerned with the dates of activity or the 
 patterns, just how frequently they achieve certain levels of activity.
 
-```{r}
+
+```r
 ## What is mean total number of steps taken per day?
 steps1 <- na.omit (data)  # Remove the NA data
 steps <- tapply (steps1$steps, steps1$date, sum)  # Sum the steps by date
@@ -100,25 +102,43 @@ As you can see in the plot below, much of the activity surpasses the critical
 (http://startwalkingnow.org/) [recommends]
 (http://www.heart.org/HEARTORG/Conditions/More/CardiacRehab/Frequently-Asked-Questions-About-Physical-Activity_UCM_307388_Article.jsp).^2
 
-```{r}
+
+```r
 hist (steps, main = "Frequency of Steps Per Day", xlab = "Steps")
 abline (v = 10000, col = "green", lwd = 3)
 ```
 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+
 The histogram below shows a more detailed view of data.
 
-```{r}
+
+```r
 hist (steps, main = "Frequency of Steps Per Day", xlab = "Steps", 
       length (steps))
 abline (v = 10000, col = "green", lwd = 3)
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+
 Now let's look at the **median** and **mean** values of the total number of 
 steps taken per day.
 
-```{r}
+
+```r
 print (paste ("Median:", median(steps, na.rm = T)), quote = F)
+```
+
+```
+## [1] Median: 10765
+```
+
+```r
 print (paste ("Mean:", mean(steps, na.rm = T)), quote = F)
+```
+
+```
+## [1] Mean: 10766.1886792453
 ```
 
 ## Average Daily Activity Pattern
@@ -128,7 +148,8 @@ now look at grouping the step counts by the time of day. That is easily
 accomplished by grouping on the interval number, which represents a 5-minute 
 time slot during the day.
 
-```{r}
+
+```r
 library (plyr)
 activity <- data
 # Convert the date variable from a factor to a date.
@@ -141,7 +162,8 @@ daily <- ddply (activity, .(interval), summarize,
 So let's show a plot showing the average number of steps, by 5-minute interval, 
 across all days.
 
-```{r}
+
+```r
 library (ggplot2)
 pl <- ggplot (daily, aes( x = interval, y = avgsteps))
 pl <- pl + geom_line ()
@@ -150,11 +172,14 @@ pl <- pl + labs (x = "5- minute Interval", y = "Average Number of Steps",
 pl
 ```
 
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
+
 This begs the question: at what time of the day does the subject take the most 
 steps? We can find this by looking at which 5-minute time interval contains the 
 maximum number of steps and converting the interval number^3 to the time of day.
 
-```{r}
+
+```r
 maxstepsidx <- which.max (daily$avgsteps)  # Find the index on the max value
 maxsteps <- daily$avgsteps [maxstepsidx]  # This is the max value
 maxinterval <- daily$interval [maxstepsidx]  # This is the interval number
@@ -169,14 +194,30 @@ print (paste ("The subject walked an average of ", maxsteps, " steps at ",
               maxinterval, ")", sep = ""), quote = F)
 ```
 
+```
+## [1] The subject walked an average of 206.169811320755 steps at 8:21 AM (interval 835)
+```
+
 ## Imputing Values
 
 The assignment calls for choosing a method -- any method -- for adding 
 missing values in the data. Looking at the data you can see that on the 
 **steps** variable has missing values.
 
-```{r}
+
+```r
 summary (activity)
+```
+
+```
+##      steps            date               interval   
+##  Min.   :  0.0   Min.   :2012-10-01   Min.   :   0  
+##  1st Qu.:  0.0   1st Qu.:2012-10-16   1st Qu.: 589  
+##  Median :  0.0   Median :2012-10-31   Median :1178  
+##  Mean   : 37.4   Mean   :2012-10-31   Mean   :1178  
+##  3rd Qu.: 12.0   3rd Qu.:2012-11-15   3rd Qu.:1766  
+##  Max.   :806.0   Max.   :2012-11-30   Max.   :2355  
+##  NA's   :2304
 ```
 
 The simplest method is to replace all NA values with their corresponding mean 
@@ -184,11 +225,30 @@ for the given interval. Let's start by merging the *activity* data frame with
 the *daily* data frame, then filling in the missing values with the step's
 average value.
 
-```{r}
+
+```r
 merged <- merge (activity, daily)
 merged$steps [is.na (merged$steps)] <- merged$avgsteps
+```
+
+```
+## Warning: number of items to replace is not a multiple of replacement
+## length
+```
+
+```r
 merged$avgsteps <- NULL  # Remove column so summaries match in col count.
 summary (merged)
+```
+
+```
+##     interval        steps            date           
+##  Min.   :   0   Min.   :  0.0   Min.   :2012-10-01  
+##  1st Qu.: 589   1st Qu.:  0.0   1st Qu.:2012-10-16  
+##  Median :1178   Median :  0.0   Median :2012-10-31  
+##  Mean   :1178   Mean   : 32.5   Mean   :2012-10-31  
+##  3rd Qu.:1766   3rd Qu.:  1.7   3rd Qu.:2012-11-15  
+##  Max.   :2355   Max.   :806.0   Max.   :2012-11-30
 ```
 
 ## Impact of Imputing Data
@@ -197,7 +257,8 @@ The assignment asks the question: Does the imputed data have an impact on
 the total daily number of steps? Let's look at a histogram of the new dataset.
 We start by grouping the data on date, summing the number of steps each day.
 
-```{r}
+
+```r
 mdaily <- ddply (merged, .(date), summarize, totsteps = sum (steps))
 par (mfcol = c(1, 2), mar = c (4, 4, 2, 1))
 hist (mdaily$totsteps, main = "Frequency of Steps Per Day\n(Imputed)", 
@@ -208,16 +269,44 @@ hist (steps, main = "Frequency of Steps Per Day\n(Original)",
 abline (v = 10000, col = "green", lwd = 3)
 ```
 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
+
 The histograms above give a clear picture. The impact is that the lower end of 
 the scale -- where the average number of steps in a day was low -- gets a boost.
 You can also see that by comparing the imputed and original **median** and 
 **mean** values. 
 
-```{r}
+
+```r
 print (paste ("Median (Imputed):", median(mdaily$totsteps)), quote = F)
+```
+
+```
+## [1] Median (Imputed): 10395
+```
+
+```r
 print (paste ("Median (Original):", median(steps, na.rm = T)), quote = F)
+```
+
+```
+## [1] Median (Original): 10765
+```
+
+```r
 print (paste ("Mean (Imputed):", mean(mdaily$totsteps)), quote = F)
+```
+
+```
+## [1] Mean (Imputed): 9371.43705536653
+```
+
+```r
 print (paste ("Mean (Original):", mean(steps, na.rm = T)), quote = F)
+```
+
+```
+## [1] Mean (Original): 10766.1886792453
 ```
 
 ## Activity Patterns
@@ -227,7 +316,8 @@ patterns between weekdays and weekends. We start by adding a column to the
 dataset and setting the value to either *weekday* or *weekend*, depending upon 
 the day of the week for the row's date.
 
-```{r}
+
+```r
 dow <- merged  # Make a copy of the imputed data
 dow$dayofweek <- weekdays (dow$date)  # Add column with the name of the day
 # Convert the day name to either "weekday" or "weekend" and make it a factor
@@ -241,13 +331,16 @@ The following panel plot shows the time series plot of the 5-minute interval
 (x-axis) and the average number of steps taken averaged across all weekday days 
 or weekend days (y-axis).
 
-```{r}
+
+```r
 dowactivity <- ddply (dow, .(interval, dayofweek), summarize, 
                       avgsteps = mean (steps))
 library (lattice)
 xyplot (avgsteps ~ interval | dayofweek, data = dowactivity, type = 'l',
         lwd = 2, layout = c (1, 2), ylab = "Number of Steps", col = "black")
 ```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
 From this we can see that the subject's highest level of activity is around 8 AM
 on the weedays, after which it tapers off significantly, whereas on the weekend 
